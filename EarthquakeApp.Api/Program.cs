@@ -1,3 +1,7 @@
+using EarthquakeApp.Api.Configuration;
+using EarthquakeApp.Api.Caching;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,7 +10,18 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.Configure<RestCountriesOptions>(
+        builder.Configuration.GetSection(RestCountriesOptions.SectionName));
+builder.Services.Configure<UsgsOptions>(
+        builder.Configuration.GetSection(UsgsOptions.SectionName));
+builder.Services.Configure<CacheOptions>(
+        builder.Configuration.GetSection(CacheOptions.SectionName));
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICacheService, CacheService>();
+
 var app = builder.Build();
+
+app.UseMiddleware<EarthquakeApp.Api.Middleware.ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
