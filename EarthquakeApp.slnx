@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="EarthquakeApp.Api/EarthquakeApp.Api.csproj" Id="9b438556-3356-4f61-b110-8b26f6b576f6" />
+  <Project Path="EarthquakeApp.Data/EarthquakeApp.Data.csproj" Id="515568eb-ac21-43d4-ae76-6d5f8fccd339" />
+  <Project Path="EarthquakeApp.Dtos/EarthquakeApp.Dtos.csproj" Id="9e32afa6-fc98-45ff-a546-2ddd8e0beda6" />
+  <Project Path="EarthquakeApp.Web/EarthquakeApp.Web.csproj" Id="ea139984-5ce5-44a4-93f2-583a8a970375" />
+</Solution>
