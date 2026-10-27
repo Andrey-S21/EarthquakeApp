@@ -1,8 +1,17 @@
 using EarthquakeApp.Api.Configuration;
 using EarthquakeApp.Api.Caching;
+using EarthquakeApp.Data.Models;
+using Microsoft.EntityFrameworkCore;
+using EarthquakeApp.Data.Repositories;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<EarthquakeDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("EarthquakeDB")));
+
+builder.Services.AddScoped<IEarthquakeRepository, EarthquakeRepository>();
 
 // Add services to the container.
 
