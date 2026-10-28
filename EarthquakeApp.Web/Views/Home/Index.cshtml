@@ -1,8 +1,119 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model EarthquakeApp.Web.Models.HomeIndexViewModel
+
+@{
+    ViewData["Title"] = "Sismos";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="earthquake-page">
+    <h1 class="text-center mb-4">Consulta de Sismos</h1>
+
+    <form method="get" asp-controller="Home" asp-action="Index" class="search-form mb-4">
+        <div class="search-wrapper">
+            <input type="text"
+                   name="country"
+                   value="@Model.SearchTerm"
+                   class="form-control search-input"
+                   placeholder="Buscar por país..." />
+            <button type="submit" class="btn btn-primary search-button">Buscar</button>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.UserMessage))
+    {
+        <div class="alert alert-info" role="alert">
+            @Model.UserMessage
+        </div>
+    }
+
+    <div class="table-responsive shadow-sm rounded bg-white">
+        <table class="table table-striped table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Magnitud</th>
+                    <th>Ubicación</th>
+                    <th>Fecha y hora (UTC)</th>
+                    <th>Latitud</th>
+                    <th>Longitud</th>
+                    <th>Profundidad (km)</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Earthquakes.Any())
+                {
+                    @foreach (var earthquake in Model.Earthquakes)
+                    {
+                        <tr>
+                            <td>@(earthquake.Magnitude?.ToString("0.0") ?? "N/D")</td>
+                            <td>@earthquake.Place</td>
+                            <td>@earthquake.Time.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@earthquake.Latitude.ToString("0.0000")</td>
+                            <td>@earthquake.Longitude.ToString("0.0000")</td>
+                            <td>@(earthquake.DepthKm?.ToString("0.0") ?? "N/D")</td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(earthquake.Url))
+                                {
+                                    <a href="@earthquake.Url" target="_blank" rel="noopener noreferrer">Ver</a>
+                                }
+                                else
+                                {
+                                    <span>N/D</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-4">No hay sismos para mostrar.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
+
+@if (Model.CountryInfo != null)
+{
+    <div id="countryInfoCard" class="country-info-card shadow">
+        <button type="button" id="countryInfoMinimize" class="btn-close" aria-label="Minimizar"></button>
+        <h5 class="mb-2">@Model.CountryInfo.Name</h5>
+        <p class="mb-1"><strong>Nombre oficial:</strong> @Model.CountryInfo.OfficialName</p>
+        <p class="mb-1"><strong>Capital:</strong> @(Model.CountryInfo.Capital ?? "N/D")</p>
+        <p class="mb-1"><strong>Región:</strong> @(Model.CountryInfo.Region ?? "N/D")</p>
+        <p class="mb-1"><strong>Población:</strong> @Model.CountryInfo.Population.ToString("N0")</p>
+        @if (!string.IsNullOrWhiteSpace(Model.CountryInfo.FlagUrl))
+        {
+            <img src="@Model.CountryInfo.FlagUrl" alt="Bandera de @Model.CountryInfo.Name" class="country-flag" />
+        }
+    </div>
+
+    <button type="button" id="countryInfoRestore" class="country-info-restore d-none">
+        Mostrar país
+    </button>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            const card = document.getElementById('countryInfoCard');
+            const minimizeButton = document.getElementById('countryInfoMinimize');
+            const restoreButton = document.getElementById('countryInfoRestore');
+
+            if (!card || !minimizeButton || !restoreButton) {
+                return;
+            }
+
+            minimizeButton.addEventListener('click', function () {
+                card.classList.add('d-none');
+                restoreButton.classList.remove('d-none');
+            });
+
+            restoreButton.addEventListener('click', function () {
+                card.classList.remove('d-none');
+                restoreButton.classList.add('d-none');
+            });
+        })();
+    </script>
+}
