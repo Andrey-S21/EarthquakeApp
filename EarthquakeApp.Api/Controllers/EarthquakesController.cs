@@ -28,6 +28,27 @@ namespace EarthquakeApp.Api.Controllers
             _logger = logger;
         }
 
+        // Endpoint para listar todos los terremotos disponibles en SQL
+        // GET: /api/earthquakes
+        [HttpGet]
+        public async Task<ActionResult<List<EarthquakeDto>>> GetAll()
+        {
+            try
+            {
+                var earthquakes = await _earthquakeService.GetAllEarthquakesAsync();
+                return Ok(earthquakes);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error inesperado listando terremotos");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponseDto
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Message = "Ocurrió un error inesperado. Por favor, intenta más tarde."
+                });
+            }
+        }
+
         // Endpoint para buscar terremotos por país
         // GET: /api/earthquakes/search?country=Japan
         [HttpGet("search")]
