@@ -129,8 +129,6 @@ namespace EarthquakeApp.Api.Services
             return countryDto;
         }
 
-        // Método privado para cargar TODOS los países desde la API de RestCountries
-        // Los carga una sola vez en esta sesión para mejorar performance
         private async Task<List<RestCountryResponse>?> LoadAllCountriesAsync()
         {
             var options = _restOptions.Value;
@@ -139,8 +137,16 @@ namespace EarthquakeApp.Api.Services
 
             try
             {
-                // Se hace la petición GET a la API de RestCountries
-                var response = await _httpClient.GetAsync(options.BaseUrl);
+                // Se crea la petición con el header de autorización
+                var request = new HttpRequestMessage(HttpMethod.Get, options.BaseUrl);
+
+                // Se agrega el API Key en el header si está configurado
+                if (!string.IsNullOrWhiteSpace(options.ApiKey))
+                {
+                    request.Headers.Add("Authorization", $"Bearer {options.ApiKey}");
+                }
+
+                var response = await _httpClient.SendAsync(request);
 
                 // Se verifica que la respuesta sea exitosa
                 if (!response.IsSuccessStatusCode)
