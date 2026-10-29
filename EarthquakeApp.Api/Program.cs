@@ -38,6 +38,9 @@ builder.Services.Configure<CacheOptions>(
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICacheService, CacheService>();
 
+// Se registra el servicio que descarga los terremotos de USGS automáticamente al arrancar la API
+builder.Services.AddHostedService<UsgsSyncHostedService>();
+
 var app = builder.Build();
 
 // Se usa middleware personalizado para manejar excepciones

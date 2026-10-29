@@ -93,22 +93,21 @@ namespace EarthquakeApp.Api.Services
         // Este método privado realiza el trabajo pesado: se llama a RestCountries y se procesan los datos
         private async Task<CountryDto?> FetchCountryAsync(string countryName)
         {
-            // Paso 1: Si ya se cargaron TODOS los países en esta sesión, usar el caché local
-            if (_countryCache == null)
-            {
-                _countryCache = await LoadAllCountriesAsync();
-            }
+            // Se construye la URL dinámica con el país buscado (sin autenticación, ya que es pública)
+            var url = $"{_restOptions.Value.BaseUrl}?q={Uri.EscapeDataString(countryName)}";
 
-            // Paso 2: Si aún no hay caché (por error), retornar null
-            if (_countryCache == null || _countryCache.Count == 0)
+            var countries = await LoadCountriesBySearchAsync(url);
+
+            // Paso 2: Si no se cargaron países, retornar null
+            if (countries == null || countries.Count == 0)
             {
-                _logger.LogWarning("No se pudo cargar la lista de países desde la API de RestCountries");
+                _logger.LogWarning("País no encontrado en RestCountries: {Country}", countryName);
                 return null;
             }
 
-            // Paso 3: Se busca el país en el caché con búsqueda flexible
+            // Paso 3: Se busca el país en los resultados con búsqueda flexible
             // Se pueden buscar por: nombre común, nombre oficial, código cca2 o cca3
-            var country = _countryCache.FirstOrDefault(c =>
+            var country = countries.FirstOrDefault(c =>
                 c.Name?.Common?.Equals(countryName, StringComparison.OrdinalIgnoreCase) == true ||
                 c.Name?.Official?.Equals(countryName, StringComparison.OrdinalIgnoreCase) == true ||
                 (c.Cca2?.Equals(countryName, StringComparison.OrdinalIgnoreCase) == true) ||
@@ -117,7 +116,7 @@ namespace EarthquakeApp.Api.Services
 
             if (country == null)
             {
-                _logger.LogWarning("País no encontrado en la API: {Country}", countryName);
+                _logger.LogWarning("País no encontrado en la búsqueda: {Country}", countryName);
                 return null;
             }
 
@@ -129,21 +128,20 @@ namespace EarthquakeApp.Api.Services
             return countryDto;
         }
 
-        private async Task<List<RestCountryResponse>?> LoadAllCountriesAsync()
+        // Método privado para buscar países por query en RestCountries v5
+        private async Task<List<RestCountryResponse>?> LoadCountriesBySearchAsync(string url)
         {
-            var options = _restOptions.Value;
-
-            _logger.LogInformation("Cargando países desde RestCountries API");
+            _logger.LogInformation("Buscando país en RestCountries API v5");
 
             try
             {
                 // Se crea la petición con el header de autorización
-                var request = new HttpRequestMessage(HttpMethod.Get, options.BaseUrl);
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-                // Se agrega el API Key en el header si está configurado
-                if (!string.IsNullOrWhiteSpace(options.ApiKey))
+                // RestCountries v5 requiere autenticación con Bearer token
+                if (!string.IsNullOrEmpty(_restOptions.Value.ApiKey))
                 {
-                    request.Headers.Add("Authorization", $"Bearer {options.ApiKey}");
+                    request.Headers.Add("Authorization", $"Bearer {_restOptions.Value.ApiKey}");
                 }
 
                 var response = await _httpClient.SendAsync(request);
@@ -151,40 +149,51 @@ namespace EarthquakeApp.Api.Services
                 // Se verifica que la respuesta sea exitosa
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("RestCountries API respondió con error: {StatusCode}", response.StatusCode);
+                    _logger.LogError("RestCountries API respondió con error: {StatusCode}", response.StatusCode);
                     return null;
                 }
+
+                _logger.LogInformation("Respuesta exitosa de RestCountries");
 
                 // Se lee el contenido JSON de la respuesta
                 var content = await response.Content.ReadAsStringAsync();
 
-                // Se convierte el JSON a un arreglo de objetos RestCountryResponse
-                var options_json = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var countries = JsonSerializer.Deserialize<List<RestCountryResponse>>(content, options_json);
-
-                // Se verifica que se obtuvieron resultados
-                if (countries != null && countries.Count > 0)
+                if (content.Length < 500)
                 {
-                    _logger.LogInformation("Se cargaron {Count} países desde RestCountries", countries.Count);
-                    return countries;
+                    _logger.LogInformation("JSON recibido: {Content}", content);
                 }
 
-                _logger.LogWarning("RestCountries no contiene países válidos");
-                return null;
-            }
-            catch (JsonException jsonEx)
-            {
-                _logger.LogWarning(jsonEx, "Error deserializando RestCountries API");
+                var options_json = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+                // v5 devuelve un wrapper { data: { objects: [...] } }
+                var wrapper = JsonSerializer.Deserialize<RestCountriesV5Response>(content, options_json);
+
+                _logger.LogInformation("Wrapper deserializado. Data: {DataNull}, Objects: {ObjectsNull}", 
+                    wrapper?.Data == null ? "null" : "not-null",
+                    wrapper?.Data?.Objects == null ? "null" : wrapper.Data.Objects.Count.ToString());
+
+                if (wrapper?.Data?.Objects != null && wrapper.Data.Objects.Count > 0)
+                {
+                    _logger.LogInformation("Se cargaron {Count} paises desde RestCountries v5", wrapper.Data.Objects.Count);
+                    return wrapper.Data.Objects;
+                }
+
+                _logger.LogWarning("RestCountries no contiene resultados para la búsqueda");
                 return null;
             }
             catch (HttpRequestException httpEx)
             {
-                _logger.LogWarning(httpEx, "Error de conexión con RestCountries API");
+                _logger.LogError(httpEx, "Error de conexión con RestCountries API");
+                return null;
+            }
+            catch (JsonException jsonEx)
+            {
+                _logger.LogError(jsonEx, "Error deserializando RestCountries API - respuesta no esperada");
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error cargando países desde la API");
+                _logger.LogError(ex, "Error inesperado cargando país desde la API");
                 return null;
             }
         }

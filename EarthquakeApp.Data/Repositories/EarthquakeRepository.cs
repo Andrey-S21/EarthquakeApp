@@ -27,5 +27,41 @@ namespace EarthquakeApp.Data.Repositories
             await _context.Earthquakes.AddAsync(earthquake);
             await _context.SaveChangesAsync();  //Guarda los cambios en SQL Server.
         }
+
+        // Se agregan todos los terremotos recibidos y se guardan en un solo viaje a SQL Server
+        public async Task AddRangeAsync(IEnumerable<Earthquake> earthquakes)
+        {
+            await _context.Earthquakes.AddRangeAsync(earthquakes);
+            await _context.SaveChangesAsync();
+
+            // Se limpia la memoria de EF para que no se vuelva lenta con miles de registros
+            _context.ChangeTracker.Clear();
+        }
+
+        // Se busca la fecha más reciente entre todos los terremotos guardados
+        public async Task<DateTime?> GetLatestEventTimeAsync()
+        {
+            return await _context.Earthquakes.MaxAsync(e => e.EventTime);
+        }
+
+        // Se consultan en la base de datos los IDs que ya están guardados, para no repetirlos
+        public async Task<HashSet<string>> GetExistingIdsAsync(IEnumerable<string> ids)
+        {
+            var idList = ids.ToList();
+            var existing = new HashSet<string>();
+
+            // Se consulta por grupos de 1000 porque SQL Server tiene un límite de parámetros por consulta
+            foreach (var chunk in idList.Chunk(1000))
+            {
+                var found = await _context.Earthquakes
+                    .Where(e => chunk.Contains(e.Id))
+                    .Select(e => e.Id)
+                    .ToListAsync();
+
+                existing.UnionWith(found);
+            }
+
+            return existing;
+        }
     }
 }
