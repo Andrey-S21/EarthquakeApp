@@ -9,4 +9,8 @@ public class HomeIndexViewModel
     public CountryDto? CountryInfo { get; set; }
     public bool IsCountryInfoMinimized { get; set; }
     public List<EarthquakeDto> Earthquakes { get; set; } = new();
+    public int CurrentPage { get; set; } = 1;
+    public int PageSize { get; set; } = 25;
+    public int TotalItems { get; set; }
+    public int TotalPages => TotalItems <= 0 ? 0 : (int)Math.Ceiling((double)TotalItems / PageSize);
 }

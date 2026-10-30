@@ -18,6 +18,28 @@
         </div>
     </form>
 
+    @if (Model.CountryInfo != null)
+    {
+        <div class="country-info-section mb-3">
+            <div id="countryInfoCard" class="country-info-card shadow">
+                <button type="button" id="countryInfoMinimize" class="btn-close" aria-label="Minimizar"></button>
+                <h5 class="mb-2">@Model.CountryInfo.Name</h5>
+                <p class="mb-1"><strong>Nombre oficial:</strong> @Model.CountryInfo.OfficialName</p>
+                <p class="mb-1"><strong>Capital:</strong> @(Model.CountryInfo.Capital ?? "N/D")</p>
+                <p class="mb-1"><strong>Región:</strong> @(Model.CountryInfo.Region ?? "N/D")</p>
+                <p class="mb-1"><strong>Población:</strong> @Model.CountryInfo.Population.ToString("N0")</p>
+                @if (!string.IsNullOrWhiteSpace(Model.CountryInfo.FlagUrl))
+                {
+                    <img src="@Model.CountryInfo.FlagUrl" alt="Bandera de @Model.CountryInfo.Name" class="country-flag" />
+                }
+            </div>
+
+            <button type="button" id="countryInfoRestore" class="country-info-restore d-none">
+                Mostrar país
+            </button>
+        </div>
+    }
+
     @if (!string.IsNullOrWhiteSpace(Model.UserMessage))
     {
         <div class="alert alert-info" role="alert">
@@ -26,7 +48,7 @@
     }
 
     <div class="table-responsive shadow-sm rounded bg-white">
-        <table class="table table-striped table-hover align-middle mb-0">
+        <table id="earthquakeTable" class="table table-striped table-hover align-middle mb-0">
             <thead class="table-dark">
                 <tr>
                     <th>Magnitud</th>
@@ -38,7 +60,7 @@
                     <th>Detalle</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="earthquakeTableBody">
                 @if (Model.Earthquakes.Any())
                 {
                     @foreach (var earthquake in Model.Earthquakes)
@@ -72,48 +94,79 @@
             </tbody>
         </table>
     </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        var prevPage = Model.CurrentPage > 1 ? Model.CurrentPage - 1 : 1;
+        var nextPage = Model.CurrentPage < Model.TotalPages ? Model.CurrentPage + 1 : Model.TotalPages;
+        var startPage = Math.Max(1, Model.CurrentPage - 1);
+        var endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 1);
+
+        <div id="tablePagination" class="table-pagination mt-3">
+            <a class="pagination-btn @(Model.CurrentPage == 1 ? "disabled" : string.Empty)"
+               asp-controller="Home"
+               asp-action="Index"
+               asp-route-country="@Model.SearchTerm"
+               asp-route-page="1">&lt;&lt;</a>
+
+            <a class="pagination-btn @(Model.CurrentPage == 1 ? "disabled" : string.Empty)"
+               asp-controller="Home"
+               asp-action="Index"
+               asp-route-country="@Model.SearchTerm"
+               asp-route-page="@prevPage">&lt;</a>
+
+            @if (Model.CurrentPage > 2)
+            {
+                <span class="pagination-dots">...</span>
+            }
+
+            @for (var pageNumber = startPage; pageNumber <= endPage; pageNumber++)
+            {
+                <a class="pagination-btn @(pageNumber == Model.CurrentPage ? "active" : string.Empty)"
+                   asp-controller="Home"
+                   asp-action="Index"
+                   asp-route-country="@Model.SearchTerm"
+                   asp-route-page="@pageNumber">@pageNumber</a>
+            }
+
+            @if (Model.CurrentPage < Model.TotalPages - 1)
+            {
+                <span class="pagination-dots">...</span>
+            }
+
+            <a class="pagination-btn @(Model.CurrentPage == Model.TotalPages ? "disabled" : string.Empty)"
+               asp-controller="Home"
+               asp-action="Index"
+               asp-route-country="@Model.SearchTerm"
+               asp-route-page="@nextPage">&gt;</a>
+
+            <a class="pagination-btn @(Model.CurrentPage == Model.TotalPages ? "disabled" : string.Empty)"
+               asp-controller="Home"
+               asp-action="Index"
+               asp-route-country="@Model.SearchTerm"
+               asp-route-page="@Model.TotalPages">&gt;&gt;</a>
+        </div>
+    }
 </div>
-
-@if (Model.CountryInfo != null)
-{
-    <div id="countryInfoCard" class="country-info-card shadow">
-        <button type="button" id="countryInfoMinimize" class="btn-close" aria-label="Minimizar"></button>
-        <h5 class="mb-2">@Model.CountryInfo.Name</h5>
-        <p class="mb-1"><strong>Nombre oficial:</strong> @Model.CountryInfo.OfficialName</p>
-        <p class="mb-1"><strong>Capital:</strong> @(Model.CountryInfo.Capital ?? "N/D")</p>
-        <p class="mb-1"><strong>Región:</strong> @(Model.CountryInfo.Region ?? "N/D")</p>
-        <p class="mb-1"><strong>Población:</strong> @Model.CountryInfo.Population.ToString("N0")</p>
-        @if (!string.IsNullOrWhiteSpace(Model.CountryInfo.FlagUrl))
-        {
-            <img src="@Model.CountryInfo.FlagUrl" alt="Bandera de @Model.CountryInfo.Name" class="country-flag" />
-        }
-    </div>
-
-    <button type="button" id="countryInfoRestore" class="country-info-restore d-none">
-        Mostrar país
-    </button>
-}
 
 @section Scripts {
     <script>
-        (function () {
+        window.addEventListener('load', function () {
             const card = document.getElementById('countryInfoCard');
             const minimizeButton = document.getElementById('countryInfoMinimize');
             const restoreButton = document.getElementById('countryInfoRestore');
 
-            if (!card || !minimizeButton || !restoreButton) {
-                return;
+            if (card && minimizeButton && restoreButton) {
+                minimizeButton.addEventListener('click', function () {
+                    card.classList.add('d-none');
+                    restoreButton.classList.remove('d-none');
+                });
+
+                restoreButton.addEventListener('click', function () {
+                    card.classList.remove('d-none');
+                    restoreButton.classList.add('d-none');
+                });
             }
-
-            minimizeButton.addEventListener('click', function () {
-                card.classList.add('d-none');
-                restoreButton.classList.remove('d-none');
-            });
-
-            restoreButton.addEventListener('click', function () {
-                card.classList.remove('d-none');
-                restoreButton.classList.add('d-none');
-            });
-        })();
+        });
     </script>
 }

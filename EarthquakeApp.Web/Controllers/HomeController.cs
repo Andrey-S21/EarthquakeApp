@@ -15,35 +15,55 @@ namespace EarthquakeApp.Web.Controllers
         }
 
         // Acción principal de la página: lista terremotos y procesa búsqueda por país
-        public async Task<IActionResult> Index(string? country)
+        public async Task<IActionResult> Index(string? country, int page = 1)
         {
+            const int pageSize = 25;
+            page = page < 1 ? 1 : page;
+
             var model = new HomeIndexViewModel
             {
-                SearchTerm = country?.Trim() ?? string.Empty
+                SearchTerm = country?.Trim() ?? string.Empty,
+                CurrentPage = page,
+                PageSize = pageSize
             };
 
             try
             {
+                List<EarthquakeApp.Dtos.EarthquakeDto> allEarthquakes;
+
                 if (string.IsNullOrWhiteSpace(model.SearchTerm))
                 {
-                    model.Earthquakes = await _earthquakeApiService.GetAllEarthquakesAsync();
+                    allEarthquakes = await _earthquakeApiService.GetAllEarthquakesAsync();
                     model.CountryInfo = null;
                 }
                 else
                 {
                     var response = await _earthquakeApiService.SearchByCountryAsync(model.SearchTerm);
-                    model.Earthquakes = response.Earthquakes;
+                    allEarthquakes = response.Earthquakes;
                     model.CountryInfo = response.Country;
 
                     if (model.CountryInfo == null)
                     {
                         model.UserMessage = "No se encontró información del país solicitado.";
                     }
-                    else if (!model.Earthquakes.Any())
+                    else if (!allEarthquakes.Any())
                     {
                         model.UserMessage = "No se encontraron terremotos para el país buscado.";
                     }
                 }
+
+                model.TotalItems = allEarthquakes.Count;
+
+                if (model.TotalPages > 0 && model.CurrentPage > model.TotalPages)
+                {
+                    model.CurrentPage = model.TotalPages;
+                }
+
+                var skip = (model.CurrentPage - 1) * model.PageSize;
+                model.Earthquakes = allEarthquakes
+                    .Skip(skip)
+                    .Take(model.PageSize)
+                    .ToList();
             }
             catch (Exception ex)
             {
