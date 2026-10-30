@@ -30,3 +30,73 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+.country-info-section {
+  display: flex;
+  justify-content: center;
+}
+
+.country-info-card {
+  width: 100%;
+  max-width: 640px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.country-info-card .btn-close {
+  float: right;
+}
+
+.country-flag {
+  width: 25%;
+  max-width: 120px;
+  border-radius: 8px;
+  margin-top: 0.75rem;
+}
+
+.country-info-restore {
+  border: 0;
+  border-radius: 999px;
+  background-color: #0d6efd;
+  color: #fff;
+  padding: 0.6rem 1rem;
+}
+
+.table-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  border: 1px solid #d0d7de;
+  background-color: #fff;
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.pagination-btn.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: #fff;
+  font-weight: 600;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagination-btn.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.pagination-dots {
+  padding: 0 0.15rem;
+}
