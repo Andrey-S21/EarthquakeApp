@@ -1,153 +1,179 @@
 ﻿@model EarthquakeApp.Web.Models.HomeIndexViewModel
 
 @{
-    ViewData["Title"] = "Sismos";
+    ViewData["Title"] = "Consulta de Sismos";
 }
 
-<div class="earthquake-page">
-    <h1 class="text-center mb-4">Consulta de Sismos</h1>
+@functions {
+    // Clasifica la magnitud para dar color y una etiqueta fácil de entender
+    private static (string Css, string Label) Severity(double? magnitude) => magnitude switch
+    {
+        null => ("mag-na", "Sin dato"),
+        < 4 => ("mag-minor", "Menor"),
+        < 5 => ("mag-light", "Leve"),
+        < 6 => ("mag-moderate", "Moderado"),
+        < 7 => ("mag-strong", "Fuerte"),
+        _ => ("mag-major", "Mayor")
+    };
+}
 
-    <form method="get" asp-controller="Home" asp-action="Index" class="search-form mb-4">
+<section class="landing @(Model.HasSearched ? "has-results" : string.Empty)">
+    <h1 class="landing-title">🌎 Consulta de Sismos</h1>
+    <p class="landing-subtitle">Escribe el nombre de un país en inglés, por ejemplo <strong>Japan</strong> o <strong>Chile</strong>.</p>
+
+    <form id="searchForm" method="get" asp-controller="Home" asp-action="Index" class="search-form" novalidate>
         <div class="search-wrapper">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
             <input type="text"
+                   id="searchInput"
                    name="country"
                    value="@Model.SearchTerm"
+                   maxlength="100"
+                   autocomplete="off"
                    class="form-control search-input"
                    placeholder="Buscar por país..." />
             <button type="submit" class="btn btn-primary search-button">Buscar</button>
         </div>
     </form>
+</section>
 
-    @if (Model.CountryInfo != null)
-    {
-        <div class="country-info-section mb-3">
-            <div id="countryInfoCard" class="country-info-card shadow">
-                <button type="button" id="countryInfoMinimize" class="btn-close" aria-label="Minimizar"></button>
-                <h5 class="mb-2">@Model.CountryInfo.Name</h5>
-                <p class="mb-1"><strong>Nombre oficial:</strong> @Model.CountryInfo.OfficialName</p>
-                <p class="mb-1"><strong>Capital:</strong> @(Model.CountryInfo.Capital ?? "N/D")</p>
-                <p class="mb-1"><strong>Región:</strong> @(Model.CountryInfo.Region ?? "N/D")</p>
-                <p class="mb-1"><strong>Población:</strong> @Model.CountryInfo.Population.ToString("N0")</p>
-                @if (!string.IsNullOrWhiteSpace(Model.CountryInfo.FlagUrl))
+@if (!string.IsNullOrWhiteSpace(Model.UserMessage))
+{
+    <div id="serverAlert" class="d-none"
+         data-icon="@(Model.AlertIcon ?? "info")"
+         data-title="@Model.AlertTitle"
+         data-message="@Model.UserMessage"></div>
+}
+
+@if (Model.CountryInfo != null)
+{
+    var country = Model.CountryInfo;
+
+    <aside id="countryInfoCard" class="country-float shadow-lg" aria-label="Información del país">
+        <button type="button" id="countryInfoMinimize" class="btn-close country-float-close" aria-label="Minimizar"></button>
+
+        <div class="country-float-header">
+            @if (!string.IsNullOrWhiteSpace(country.FlagUrl))
+            {
+                <img src="@country.FlagUrl" alt="Bandera de @country.Name" class="country-float-flag" />
+            }
+            <div>
+                <h5 class="mb-0">@country.Name</h5>
+                <small class="text-muted">@(country.OfficialName ?? country.Name)</small>
+            </div>
+        </div>
+
+        <dl class="country-float-list">
+            <div><dt>Capital</dt><dd>@(country.Capital ?? "N/D")</dd></div>
+            <div><dt>Región</dt><dd>@(country.Region ?? "N/D")</dd></div>
+            <div><dt>Subregión</dt><dd>@(country.Subregion ?? "N/D")</dd></div>
+            <div><dt>Población</dt><dd>@country.Population.ToString("N0")</dd></div>
+            <div><dt>Idiomas</dt><dd>@(country.Languages?.Any() == true ? string.Join(", ", country.Languages) : "N/D")</dd></div>
+            <div><dt>Monedas</dt><dd>@(country.Currencies?.Any() == true ? string.Join(", ", country.Currencies) : "N/D")</dd></div>
+        </dl>
+    </aside>
+
+    <button type="button" id="countryInfoRestore" class="country-float-restore d-none">
+        Ver información de @country.Name
+    </button>
+}
+
+@if (Model.HasSearched)
+{
+    var first = Model.TotalItems == 0 ? 0 : (Model.CurrentPage - 1) * Model.PageSize + 1;
+    var last = Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalItems);
+
+    <section class="results">
+        <div class="results-header">
+            <h2 class="results-title">Terremotos en @Model.SearchTerm</h2>
+            <span class="results-count">Mostrando @first–@last de @Model.TotalItems.ToString("N0")</span>
+        </div>
+
+        @if (Model.Earthquakes.Any())
+        {
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+                @foreach (var quake in Model.Earthquakes)
                 {
-                    <img src="@Model.CountryInfo.FlagUrl" alt="Bandera de @Model.CountryInfo.Name" class="country-flag" />
+                    var severity = Severity(quake.Magnitude);
+
+                    <div class="col">
+                        <article class="quake-card">
+                            <div class="quake-mag @severity.Css">
+                                <span class="quake-mag-value">@(quake.Magnitude?.ToString("0.0") ?? "–")</span>
+                                <span class="quake-mag-label">@severity.Label</span>
+                            </div>
+
+                            <div class="quake-body">
+                                <h3 class="quake-place">@quake.Place</h3>
+                                <p class="quake-meta">🕒 @quake.Time.ToString("dd/MM/yyyy HH:mm") UTC</p>
+                                <p class="quake-meta">⬇️ Profundidad: @(quake.DepthKm?.ToString("0.0") ?? "N/D") km</p>
+                                <p class="quake-meta">📍 @quake.Latitude.ToString("0.00")°, @quake.Longitude.ToString("0.00")°</p>
+
+                                @if (!string.IsNullOrWhiteSpace(quake.Url))
+                                {
+                                    <a href="@quake.Url" target="_blank" rel="noopener noreferrer" class="quake-link">Ver detalle en USGS →</a>
+                                }
+                            </div>
+                        </article>
+                    </div>
                 }
             </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <p class="mb-0">No hay terremotos para mostrar.</p>
+            </div>
+        }
 
-            <button type="button" id="countryInfoRestore" class="country-info-restore d-none">
-                Mostrar país
-            </button>
-        </div>
-    }
+        @if (Model.TotalPages > 1)
+        {
+            var prevPage = Model.CurrentPage > 1 ? Model.CurrentPage - 1 : 1;
+            var nextPage = Model.CurrentPage < Model.TotalPages ? Model.CurrentPage + 1 : Model.TotalPages;
+            var startPage = Math.Max(1, Model.CurrentPage - 1);
+            var endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 1);
 
-    @if (!string.IsNullOrWhiteSpace(Model.UserMessage))
-    {
-        <div class="alert alert-info" role="alert">
-            @Model.UserMessage
-        </div>
-    }
+            <div id="tablePagination" class="table-pagination mt-4">
+                <a class="pagination-btn @(Model.CurrentPage == 1 ? "disabled" : string.Empty)"
+                   asp-controller="Home" asp-action="Index"
+                   asp-route-country="@Model.SearchTerm" asp-route-page="1">&lt;&lt;</a>
 
-    <div class="table-responsive shadow-sm rounded bg-white">
-        <table id="earthquakeTable" class="table table-striped table-hover align-middle mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>Magnitud</th>
-                    <th>Ubicación</th>
-                    <th>Fecha y hora (UTC)</th>
-                    <th>Latitud</th>
-                    <th>Longitud</th>
-                    <th>Profundidad (km)</th>
-                    <th>Detalle</th>
-                </tr>
-            </thead>
-            <tbody id="earthquakeTableBody">
-                @if (Model.Earthquakes.Any())
+                <a class="pagination-btn @(Model.CurrentPage == 1 ? "disabled" : string.Empty)"
+                   asp-controller="Home" asp-action="Index"
+                   asp-route-country="@Model.SearchTerm" asp-route-page="@prevPage">&lt;</a>
+
+                @if (Model.CurrentPage > 2)
                 {
-                    @foreach (var earthquake in Model.Earthquakes)
-                    {
-                        <tr>
-                            <td>@(earthquake.Magnitude?.ToString("0.0") ?? "N/D")</td>
-                            <td>@earthquake.Place</td>
-                            <td>@earthquake.Time.ToString("yyyy-MM-dd HH:mm")</td>
-                            <td>@earthquake.Latitude.ToString("0.0000")</td>
-                            <td>@earthquake.Longitude.ToString("0.0000")</td>
-                            <td>@(earthquake.DepthKm?.ToString("0.0") ?? "N/D")</td>
-                            <td>
-                                @if (!string.IsNullOrWhiteSpace(earthquake.Url))
-                                {
-                                    <a href="@earthquake.Url" target="_blank" rel="noopener noreferrer">Ver</a>
-                                }
-                                else
-                                {
-                                    <span>N/D</span>
-                                }
-                            </td>
-                        </tr>
-                    }
+                    <span class="pagination-dots">...</span>
                 }
-                else
+
+                @for (var pageNumber = startPage; pageNumber <= endPage; pageNumber++)
                 {
-                    <tr>
-                        <td colspan="7" class="text-center py-4">No hay sismos para mostrar.</td>
-                    </tr>
+                    <a class="pagination-btn @(pageNumber == Model.CurrentPage ? "active" : string.Empty)"
+                       asp-controller="Home" asp-action="Index"
+                       asp-route-country="@Model.SearchTerm" asp-route-page="@pageNumber">@pageNumber</a>
                 }
-            </tbody>
-        </table>
-    </div>
 
-    @if (Model.TotalPages > 1)
-    {
-        var prevPage = Model.CurrentPage > 1 ? Model.CurrentPage - 1 : 1;
-        var nextPage = Model.CurrentPage < Model.TotalPages ? Model.CurrentPage + 1 : Model.TotalPages;
-        var startPage = Math.Max(1, Model.CurrentPage - 1);
-        var endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 1);
+                @if (Model.CurrentPage < Model.TotalPages - 1)
+                {
+                    <span class="pagination-dots">...</span>
+                }
 
-        <div id="tablePagination" class="table-pagination mt-3">
-            <a class="pagination-btn @(Model.CurrentPage == 1 ? "disabled" : string.Empty)"
-               asp-controller="Home"
-               asp-action="Index"
-               asp-route-country="@Model.SearchTerm"
-               asp-route-page="1">&lt;&lt;</a>
+                <a class="pagination-btn @(Model.CurrentPage == Model.TotalPages ? "disabled" : string.Empty)"
+                   asp-controller="Home" asp-action="Index"
+                   asp-route-country="@Model.SearchTerm" asp-route-page="@nextPage">&gt;</a>
 
-            <a class="pagination-btn @(Model.CurrentPage == 1 ? "disabled" : string.Empty)"
-               asp-controller="Home"
-               asp-action="Index"
-               asp-route-country="@Model.SearchTerm"
-               asp-route-page="@prevPage">&lt;</a>
-
-            @if (Model.CurrentPage > 2)
-            {
-                <span class="pagination-dots">...</span>
-            }
-
-            @for (var pageNumber = startPage; pageNumber <= endPage; pageNumber++)
-            {
-                <a class="pagination-btn @(pageNumber == Model.CurrentPage ? "active" : string.Empty)"
-                   asp-controller="Home"
-                   asp-action="Index"
-                   asp-route-country="@Model.SearchTerm"
-                   asp-route-page="@pageNumber">@pageNumber</a>
-            }
-
-            @if (Model.CurrentPage < Model.TotalPages - 1)
-            {
-                <span class="pagination-dots">...</span>
-            }
-
-            <a class="pagination-btn @(Model.CurrentPage == Model.TotalPages ? "disabled" : string.Empty)"
-               asp-controller="Home"
-               asp-action="Index"
-               asp-route-country="@Model.SearchTerm"
-               asp-route-page="@nextPage">&gt;</a>
-
-            <a class="pagination-btn @(Model.CurrentPage == Model.TotalPages ? "disabled" : string.Empty)"
-               asp-controller="Home"
-               asp-action="Index"
-               asp-route-country="@Model.SearchTerm"
-               asp-route-page="@Model.TotalPages">&gt;&gt;</a>
-        </div>
-    }
-</div>
+                <a class="pagination-btn @(Model.CurrentPage == Model.TotalPages ? "disabled" : string.Empty)"
+                   asp-controller="Home" asp-action="Index"
+                   asp-route-country="@Model.SearchTerm" asp-route-page="@Model.TotalPages">&gt;&gt;</a>
+            </div>
+        }
+    </section>
+}
 
 @section Scripts {
     <script>
