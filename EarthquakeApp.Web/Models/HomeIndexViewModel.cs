@@ -6,6 +6,9 @@ public class HomeIndexViewModel
 {
     public string SearchTerm { get; set; } = string.Empty;
     public string? UserMessage { get; set; }
+    public string? AlertIcon { get; set; }
+    public string? AlertTitle { get; set; }
+    public bool HasSearched { get; set; }
     public CountryDto? CountryInfo { get; set; }
     public bool IsCountryInfoMinimized { get; set; }
     public List<EarthquakeDto> Earthquakes { get; set; } = new();
