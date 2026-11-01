@@ -31,38 +31,6 @@ body {
   text-align: start;
 }
 
-.country-info-section {
-  display: flex;
-  justify-content: center;
-}
-
-.country-info-card {
-  width: 100%;
-  max-width: 640px;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1rem;
-}
-
-.country-info-card .btn-close {
-  float: right;
-}
-
-.country-flag {
-  width: 25%;
-  max-width: 120px;
-  border-radius: 8px;
-  margin-top: 0.75rem;
-}
-
-.country-info-restore {
-  border: 0;
-  border-radius: 999px;
-  background-color: #0d6efd;
-  color: #fff;
-  padding: 0.6rem 1rem;
-}
-
 .table-pagination {
   display: flex;
   justify-content: center;
@@ -99,4 +67,333 @@ body {
 
 .pagination-dots {
   padding: 0 0.15rem;
+}
+
+.country-float {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 1040; /* sobre la página, por debajo de SweetAlert2 (1060) */
+    width: 340px;
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2.5rem);
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 16px;
+    border-top: 5px solid #0d6efd;
+    padding: 1.1rem 1.25rem 1.25rem;
+    animation: countryFloatIn 0.35s ease-out;
+}
+
+@keyframes countryFloatIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.country-float-close {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+}
+
+.country-float-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding-right: 1.5rem; /* espacio para el botón de cerrar */
+    margin-bottom: 0.9rem;
+}
+
+.country-float-flag {
+    width: 56px;
+    height: 38px;
+    object-fit: cover;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+}
+
+.country-float-list {
+    margin: 0;
+}
+
+    .country-float-list > div {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #eef0f3;
+    }
+
+        .country-float-list > div:last-child {
+            border-bottom: 0;
+        }
+
+    .country-float-list dt {
+        font-weight: 500;
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+
+    .country-float-list dd {
+        margin: 0;
+        font-weight: 600;
+        text-align: right;
+    }
+
+.country-float-restore {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 1040;
+    border: 0;
+    border-radius: 999px;
+    background-color: #0d6efd;
+    color: #fff;
+    padding: 0.65rem 1.1rem;
+    box-shadow: 0 4px 14px rgba(13, 110, 253, 0.4);
+}
+
+}
+
+body {
+    margin-bottom: 0;
+}
+
+.landing {
+    min-height: 65vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1rem 0;
+    transition: min-height 0.3s ease;
+}
+
+.landing-title {
+    font-size: clamp(1.9rem, 6vw, 3rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.landing-subtitle {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+}
+
+.landing.has-results {
+    min-height: auto;
+    padding: 1.5rem 0 1rem;
+}
+
+    .landing.has-results .landing-title {
+        font-size: 1.6rem;
+    }
+
+    .landing.has-results .landing-subtitle {
+        display: none;
+    }
+
+    .landing.has-results .landing-title {
+        margin-bottom: 1rem;
+    }
+
+
+.search-form {
+    width: 100%;
+    max-width: 640px;
+}
+
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #ffffff;
+    border: 1px solid #dfe1e5;
+    border-radius: 999px;
+    padding: 0.35rem 0.35rem 0.35rem 1.1rem;
+    box-shadow: 0 1px 6px rgba(32, 33, 36, 0.18);
+    transition: box-shadow 0.2s ease;
+}
+
+    .search-wrapper:hover,
+    .search-wrapper:focus-within {
+        box-shadow: 0 2px 12px rgba(32, 33, 36, 0.28);
+    }
+
+    .search-wrapper:has(.is-invalid) {
+        border-color: #dc3545;
+    }
+
+.search-icon {
+    color: #9aa0a6;
+    flex-shrink: 0;
+}
+
+.search-input {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    padding-left: 0;
+}
+
+    .search-input:focus {
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .search-input.is-invalid {
+        background-image: none;
+    }
+
+.search-button {
+    border-radius: 999px;
+    padding: 0.5rem 1.4rem;
+}
+
+
+.results {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding-bottom: 5rem; /* espacio para que el recuadro flotante no tape el final */
+}
+
+.results-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.results-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.results-count {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+
+.quake-card {
+    display: flex;
+    height: 100%;
+    background: #ffffff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+    .quake-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+
+.quake-mag {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 84px;
+    padding: 0.75rem 0.5rem;
+    color: #ffffff;
+}
+
+.quake-mag-value {
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.quake-mag-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.25rem;
+}
+
+.mag-na {
+    background: #6c757d;
+}
+
+.mag-minor {
+    background: #2e9e5b;
+}
+
+.mag-light {
+    background: #f2c200;
+    color: #212529;
+}
+
+.mag-moderate {
+    background: #fd7e14;
+}
+
+.mag-strong {
+    background: #dc3545;
+}
+
+.mag-major {
+    background: #8b0a1a;
+}
+
+.quake-body {
+    flex: 1;
+    min-width: 0;
+    padding: 0.85rem 1rem;
+}
+
+.quake-place {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.45rem;
+    overflow-wrap: anywhere;
+}
+
+.quake-meta {
+    margin: 0 0 0.2rem;
+    font-size: 0.85rem;
+    color: #495057;
+}
+
+.quake-link {
+    display: inline-block;
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+    .quake-link:hover {
+        text-decoration: underline;
+    }
+
+
+.empty-state {
+    text-align: center;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 2.5rem 1rem;
+    color: #6c757d;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.empty-state-icon {
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+}
+
 }
