@@ -31,13 +31,16 @@ public static class ExternalMappingExtensions
         {
             Name = country.Name.Common,
             OfficialName = country.Name.Official,
-            Capital = country.Capital?.FirstOrDefault(),
+            Capital = country.Capitals?.FirstOrDefault()?.Name,
             Region = country.Region,
             Subregion = country.Subregion,
             Population = country.Population,
-            FlagUrl = country.Flags?.Png ?? country.Flags?.Svg,
-            Languages = country.Languages?.Values.ToList() ?? new List<string>(),
-            Currencies = country.Currencies?.Values
+            FlagUrl = country.Flag?.UrlPng ?? country.Flag?.UrlSvg,
+            Languages = country.Languages?
+                .Select(l => l.Name ?? "")
+                .Where(n => n.Length > 0)
+                .ToList() ?? new List<string>(),
+            Currencies = country.Currencies?
                 .Select(c => string.IsNullOrWhiteSpace(c.Symbol) ? c.Name ?? "" : $"{c.Name} ({c.Symbol})")
                 .Where(c => c.Length > 0)
                 .ToList() ?? new List<string>()

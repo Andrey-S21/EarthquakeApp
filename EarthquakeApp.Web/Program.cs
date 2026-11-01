@@ -1,7 +1,13 @@
+using EarthquakeApp.Web.Configuration;
+using EarthquakeApp.Web.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<ApiOptions>(
+    builder.Configuration.GetSection(ApiOptions.SectionName));
+builder.Services.AddHttpClient<IEarthquakeApiService, EarthquakeApiService>();
 
 var app = builder.Build();
 

@@ -17,11 +17,9 @@ public class CacheService : ICacheService
     {
         if (_cache.TryGetValue(key, out T? cached) && cached is not null)
         {
-            _logger.LogInformation("Cache HIT: {Key}", key);
             return cached;
         }
 
-        _logger.LogInformation("Cache MISS: {Key}", key);
         var value = await factory();
 
         _cache.Set(key, value, new MemoryCacheEntryOptions

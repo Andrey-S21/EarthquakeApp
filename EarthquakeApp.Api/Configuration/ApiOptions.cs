@@ -13,6 +13,7 @@ public class UsgsOptions
     public const string SectionName = "Usgs";
 
     public string BaseUrl { get; set; } = string.Empty;
+    public string Format { get; set; } = "geojson";
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;
     public double MinMagnitude { get; set; }
